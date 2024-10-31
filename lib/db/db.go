@@ -8,6 +8,7 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/uptrace/bun/extra/bundebug"
+	"github.com/uptrace/bun/extra/bunotel"
 	//sqltrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/database/sql"
 )
 
@@ -57,6 +58,8 @@ func Open(c *config.Config) (db *bun.DB, err error) {
 	}
 
 	if db != nil {
+		db.AddQueryHook(bunotel.NewQueryHook(bunotel.WithDBName("example-db")))
+
 		db.AddQueryHook(bundebug.NewQueryHook(
 			// disable the hook
 			bundebug.WithEnabled(false),

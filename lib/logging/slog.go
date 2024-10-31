@@ -21,6 +21,10 @@ func InitSlogLogger(c *config.Config) {
 	slogJson = slog.New(slog.NewJSONHandler(os.Stdout, opts))
 }
 
+func Logger() *slog.Logger {
+	return slogJson
+}
+
 func Debug(msg string, keysAndValues ...interface{}) {
 	slogJson.Debug(msg, keysAndValues...)
 }

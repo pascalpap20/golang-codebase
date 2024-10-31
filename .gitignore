@@ -27,4 +27,10 @@ go.work.sum
 # Mac
 .DS_Store
 
+# SQLite DB
 db/*.db
+
+# Executable (rename)
+/example
+/example.exe
+

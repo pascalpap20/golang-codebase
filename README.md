@@ -9,7 +9,10 @@
 * **redis**: `go-redis/v9`.
 * **swagger**: `huma`.
 * **httpclient**: `resty`.
-* **apm/tracing***: TODO `datadog` / `elastic`
+* **apm/tracing***: `otel` with `inatrace` (backend `datadog`, TODO `elastic`)
+
+![ddtrace1](./docs/ddtrace1.png)
+
 
 ## Project Structures
 
@@ -26,6 +29,9 @@
 To enable connectors rename by ommiting `.off` suffix, then do `go mod tidy`.
 
 ## Development
+
+Some of dependencies ara using inadigital internal packages.
+Please enable private package configuration for go, see: [InaDigital Go](https://git.govtechindonesia.id/inadigital#go).
 
 Install mockery command to generate interfece mock
 

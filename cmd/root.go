@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"time"
 
@@ -12,8 +14,11 @@ import (
 	"example.com/example/lib/db"
 	"example.com/example/lib/logging"
 	"example.com/example/lib/transport"
+	"git.govtechindonesia.id/inadigital/inatrace"
 	"github.com/danielgtaylor/huma/v2/humacli"
+	"github.com/dubonzi/otelresty"
 	"github.com/go-resty/resty/v2"
+	//"go.opentelemetry.io/otel/exporters/jaeger"
 )
 
 type Options struct {
@@ -50,6 +55,13 @@ func Execute() {
 		f := transport.InitFiber(c)
 
 		hooks.OnStart(func() {
+			tp := inatrace.InitTracerDD()
+			defer func() {
+				if err := tp.Shutdown(context.Background()); err != nil {
+					log.Printf("Error shutting down tracer provider: %v", err)
+				}
+			}()
+
 			svc := &service.Services{}
 
 			handler.RegisterRoutes(f, svc)
@@ -67,6 +79,8 @@ func Execute() {
 			svc.Cache = cache
 
 			svc.Resty = resty.New()
+			opts := []otelresty.Option{otelresty.WithTracerName("example-resty")}
+			otelresty.TraceClient(svc.Resty, opts...)
 
 			// Start your server here
 			err = f.Listen(fmt.Sprintf("%s:%d", c.Host, c.Port))
