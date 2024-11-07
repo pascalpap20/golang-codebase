@@ -2,7 +2,7 @@
 
 
 * **mux**: `fiber` over `humafiber`.
-* **logging**: `slog` format JSON.
+* **logging**: `inalog`.
 * **cli**: `spf13/cobra` over `humacli`.
 * **config**: `cleanenv`.
 * **db**: `bun`.

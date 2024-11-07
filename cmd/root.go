@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"time"
 
@@ -12,13 +10,13 @@ import (
 	"example.com/example/internal/service"
 	"example.com/example/lib/cache"
 	"example.com/example/lib/db"
-	"example.com/example/lib/logging"
 	"example.com/example/lib/transport"
-	"git.govtechindonesia.id/inadigital/inatrace"
+	"git.govtechindonesia.id/inadigital/inalog"
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/dubonzi/otelresty"
 	"github.com/go-resty/resty/v2"
-	//"go.opentelemetry.io/otel/exporters/jaeger"
+	//"git.govtechindonesia.id/inadigital/inatrace/integrations/estrace"
+	//"git.govtechindonesia.id/inadigital/inatrace/integrations/ddtrace"
 )
 
 type Options struct {
@@ -50,17 +48,19 @@ func Execute() {
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
 		c := applyOptions(opts)
 
-		logging.InitSlogLogger(c)
+		inalog.Init(inalog.Cfg{Source: true})
 
 		f := transport.InitFiber(c)
 
 		hooks.OnStart(func() {
-			tp := inatrace.InitTracerDD()
-			defer func() {
-				if err := tp.Shutdown(context.Background()); err != nil {
-					log.Printf("Error shutting down tracer provider: %v", err)
-				}
-			}()
+			//tp := inatrace.InitTracerDD()
+			// OR:
+			//tp := estrace.InitTracerES()
+			// defer func() {
+			// 	if err := tp.Shutdown(context.Background()); err != nil {
+			// 		log.Printf("Error shutting down tracer provider: %v", err)
+			// 	}
+			// }()
 
 			svc := &service.Services{}
 
@@ -68,13 +68,13 @@ func Execute() {
 
 			dbConn, err := db.Open(c)
 			if err != nil {
-				logging.Error("Error", slog.Any("error", err))
+				inalog.Log().Error("Error", slog.Any("error", err))
 			}
 			svc.DB = dbConn
 
 			cache, err := cache.NewCache(c)
 			if err != nil {
-				logging.Error("Error", slog.Any("error", err))
+				inalog.Log().Error("Error", slog.Any("error", err))
 			}
 			svc.Cache = cache
 
@@ -85,7 +85,7 @@ func Execute() {
 			// Start your server here
 			err = f.Listen(fmt.Sprintf("%s:%d", c.Host, c.Port))
 			if err != nil {
-				logging.Error("Error", slog.Any("error", err))
+				inalog.Log().Error("Error", slog.Any("error", err))
 			}
 		})
 

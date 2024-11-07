@@ -6,15 +6,14 @@ import (
 
 	"example.com/example/config"
 	"example.com/example/internal/service"
-	"example.com/example/lib/logging"
-	"git.govtechindonesia.id/inadigital/inatrace"
+	"git.govtechindonesia.id/inadigital/inalog"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humafiber"
 	"github.com/gofiber/contrib/otelfiber"
 	"github.com/gofiber/fiber/v2"
 
 	mRecover "github.com/gofiber/fiber/v2/middleware/recover"
-	slogfiber "github.com/samber/slog-fiber"
+	mRequestId "github.com/gofiber/fiber/v2/middleware/requestid"
 )
 
 type Handler struct {
@@ -22,20 +21,19 @@ type Handler struct {
 }
 
 func UnwrapFiberUserContextMiddleware(ctx huma.Context, next func(huma.Context)) {
-	rctx := inatrace.ContextFrom(ctx.Context())
-	ctx = huma.WithContext(ctx, rctx)
+	ctx = huma.WithContext(ctx, inalog.WithFiberCtx(ctx.Context()))
 	next(ctx)
 }
 
 func RegisterRoutes(f *fiber.App, svc service.AllServices) huma.API {
 	c := config.Get()
 	f.Use(otelfiber.Middleware())
-	f.Use(slogfiber.New(logging.Logger()))
+	f.Use(mRequestId.New(mRequestId.Config{ContextKey: inalog.CtxKeyRequestID}))
+	f.Use(inalog.NewFiberMiddleware())
 	f.Use(mRecover.New(mRecover.Config{
 		EnableStackTrace: true,
 		StackTraceHandler: func(_ *fiber.Ctx, e interface{}) {
-			stacktraces := logging.GetTrace(1)
-			logging.Error("panic", slog.Any("error", e), slog.Any("stacktraces", stacktraces))
+			inalog.Log().Error("panic", slog.Any("error", e))
 		},
 	}))
 

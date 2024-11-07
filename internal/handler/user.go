@@ -4,12 +4,14 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
-	"example.com/example/lib/logging"
+	"git.govtechindonesia.id/inadigital/inalog"
 	"git.govtechindonesia.id/inadigital/inatrace"
 	"github.com/danielgtaylor/huma/v2"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/rand"
 )
 
 type UserResponseBody struct {
@@ -40,7 +42,7 @@ func (h *Handler) GetUsers(ctx context.Context, input *struct{}) (*ListUserOutpu
 	users, err := h.svc.UserList(ctx)
 
 	if err != nil {
-		logging.Error("Failed to list story", slog.Any("error", err))
+		inalog.LogWith(inalog.WithCfg{Ctx: ctx}).Error("Failed to list story", slog.Any("error", err))
 		return nil, huma.Error400BadRequest("fail")
 	}
 
@@ -66,9 +68,10 @@ func (h *Handler) GetUsers(ctx context.Context, input *struct{}) (*ListUserOutpu
 func (h *Handler) CreateUser(ctx context.Context, input *CreateUserInput) (*CreateUserOutput, error) {
 	user, err := h.svc.UserCreate(ctx, input.Body.Name, input.Body.Emails)
 	if err != nil {
-		logging.Error("Failed to create user", slog.Any("error", err))
+		inalog.LogWith(inalog.WithCfg{Ctx: ctx}).Error("Failed to create user", slog.Any("error", err))
 		return nil, huma.Error400BadRequest("fail")
 	}
+	inalog.LogWith(inalog.WithCfg{Ctx: ctx}).Info("New user created", slog.Int("id", int(user.ID)))
 
 	var r UserResponseBody
 	r.Name = user.Name
@@ -87,6 +90,10 @@ func (h *Handler) NotifyUser(ctx context.Context, input *struct{}) (*struct {
 }, error) {
 	_, span := inatrace.Start(ctx, "sendNotification", trace.WithAttributes(attribute.String("id", "id")))
 	defer span.End()
+
+	n := rand.Intn(3) // n will be between 0 and 10
+	inalog.LogWith(inalog.WithCfg{Ctx: ctx}).Info("Sleeping", slog.Int("durataion", n))
+	time.Sleep(time.Duration(n) * time.Second)
 
 	return &struct {
 		Body []byte
